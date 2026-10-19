@@ -1,0 +1,462 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  name                String?
+  email               String               @unique
+  normalizedEmail     String               @unique
+  handle              String               @unique
+  emailVerified       DateTime?
+  image               String?
+  bio                 String?
+  schoolName          String               @default("Nanyang Polytechnic")
+  passwordHash        String?
+  role                String               @default("USER") // USER | CREATOR | MODERATOR | ADMIN
+  status              String               @default("ACTIVE") // ACTIVE | DISABLED
+  xp                  Int                  @default(15)
+  gems                Int                  @default(250)
+  hearts              Int                  @default(5)
+  hints               Int                  @default(5)
+  streakDays          Int                  @default(1)
+  streakFreezes       Int                  @default(1)
+  beltRank            String               @default("White Belt")
+  claimedBeltsJson    String               @default("[\"White Belt\"]")
+  avatarMonsterCode   String               @default("ember-dragon")
+  darkModeUnlocked    Boolean              @default(false)
+  darkModeEnabled     Boolean              @default(false)
+  isPro               Boolean              @default(false)
+  dailyGoalQuizzes    Int                  @default(3)
+  soundEffects        Boolean              @default(true)
+  notificationsEnabled Boolean             @default(true)
+  themePreference     String               @default("light")
+  lastActiveDate      String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  accounts            Account[]
+  sessions            Session[]
+  passwordCredential  PasswordCredential?
+  createdInvitations  AccountInvitation[]  @relation("InvitationCreatedBy")
+  acceptedInvitations AccountInvitation[]  @relation("InvitationAcceptedBy")
+  actorAuditLogs      AuditLog[]           @relation("AuditLogActor")
+  targetAuditLogs     AuditLog[]           @relation("AuditLogTargetUser")
+
+  decks               Deck[]
+  studyNotes          StudyNote[]
+  importMaterials     ImportMaterial[]
+  aiTutorChats        AiTutorChat[]
+  quizSessions        QuizSession[]
+  cardStates          UserCardState[]
+  dailyActivities     DailyActivity[]
+  monsters            MonsterOwnership[]
+  shopTransactions    ShopTransaction[]
+  studyGroupMembers   StudyGroupMember[]
+  studyGroupMessages  StudyGroupMessage[]
+  liveGameSessions    LiveGameSession[]
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model PasswordCredential {
+  userId       String   @id
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AccountInvitation {
+  id               String    @id @default(cuid())
+  email            String
+  normalizedEmail  String
+  activeForEmail   String?   @unique
+  role             String    @default("USER")
+  tokenHash        String    @unique
+  expiresAt        DateTime
+  acceptedAt       DateTime?
+  revokedAt        DateTime?
+  createdByUserId  String?
+  acceptedByUserId String?
+  note             String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  createdByUser  User? @relation("InvitationCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  acceptedByUser User? @relation("InvitationAcceptedBy", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([normalizedEmail, expiresAt])
+  @@index([createdByUserId, createdAt])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  action       String
+  actorUserId  String?
+  targetUserId String?
+  targetEmail  String?
+  ipAddress    String?
+  userAgent    String?
+  metadataJson String   @default("{}")
+  createdAt    DateTime @default(now())
+
+  actorUser  User? @relation("AuditLogActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  targetUser User? @relation("AuditLogTargetUser", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([action, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([targetUserId, createdAt])
+}
+
+model Deck {
+  id           String   @id @default(cuid())
+  title        String
+  description  String   @default("")
+  category     String   @default("Computer Science")
+  level        String   @default("University")
+  color        String   @default("#7C3AED")
+  icon         String   @default("📘")
+  isPublic     Boolean  @default(false)
+  isArchived   Boolean  @default(false)
+  ownerId      String
+  clonedFromId String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  owner            User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  subdecks         Subdeck[]
+  cards            Card[]
+  studyNotes       StudyNote[]
+  importMaterials  ImportMaterial[]
+  aiTutorChats     AiTutorChat[]
+  quizSessions     QuizSession[]
+  liveGameSessions LiveGameSession[]
+
+  @@index([ownerId, isArchived])
+  @@index([isPublic, category])
+}
+
+model Subdeck {
+  id           String   @id @default(cuid())
+  deckId       String
+  title        String
+  orderIndex   Int      @default(0)
+  masteryScore Int      @default(0) // 0 to 100
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  deck         Deck          @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  cards        Card[]
+  quizSessions QuizSession[]
+
+  @@index([deckId, orderIndex])
+}
+
+model Card {
+  id          String    @id @default(cuid())
+  deckId      String
+  subdeckId   String?
+  question    String
+  answer      String
+  clozeText   String    @default("")
+  optionsJson String    @default("[]") // JSON array of distractors + correct answer
+  explanation String    @default("")
+  cardType    String    @default("MCQ") // MCQ | CLOZE | QA
+  box         Int       @default(1) // Spaced repetition box 1..5
+  nextReviewAt DateTime @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  deck         Deck            @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  subdeck      Subdeck?        @relation(fields: [subdeckId], references: [id], onDelete: SetNull)
+  quizAttempts QuizAttempt[]
+  userStates   UserCardState[]
+
+  @@index([deckId, subdeckId])
+}
+
+model UserCardState {
+  id             String    @id @default(cuid())
+  userId         String
+  cardId         String
+  box            Int       @default(1) // Leitner box 1..5
+  easeFactor     Float     @default(2.5) // SM-2 ease factor >= 1.3
+  intervalDays   Int       @default(0)
+  repetitions    Int       @default(0)
+  lapses         Int       @default(0)
+  memoryStrength Float     @default(0.0) // 0.0 to 1.0
+  lastReviewedAt DateTime?
+  nextReviewAt   DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, cardId])
+  @@index([userId, nextReviewAt])
+}
+
+model DailyActivity {
+  id               String   @id @default(cuid())
+  userId           String
+  dateKey          String   // YYYY-MM-DD
+  xpEarned         Int      @default(0)
+  cardsReviewed    Int      @default(0)
+  correctCards     Int      @default(0)
+  quizzesCompleted Int      @default(0)
+  minutesStudied   Int      @default(1)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dateKey])
+  @@index([userId, dateKey])
+}
+
+model StudyNote {
+  id              String   @id @default(cuid())
+  deckId          String?
+  ownerId         String
+  title           String
+  summary         String   @default("")
+  contentMarkdown String
+  sourceType      String   @default("PDF") // PDF | TEXT | YOUTUBE | LECTURE | MANUAL
+  sourceFilename  String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  deck  Deck? @relation(fields: [deckId], references: [id], onDelete: SetNull)
+  owner User  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, deckId])
+}
+
+model ImportMaterial {
+  id             String   @id @default(cuid())
+  deckId         String?
+  ownerId        String
+  filename       String
+  mimeType       String   @default("application/pdf")
+  sourceType     String   @default("PDF") // PDF | PASTE | YOUTUBE | LECTURE | QUIZLET | ANKI | WORD | PPT | SHEETS | URL
+  fileHashSha256 String
+  extractedText  String
+  createdAt      DateTime @default(now())
+
+  deck         Deck?         @relation(fields: [deckId], references: [id], onDelete: SetNull)
+  owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  aiTutorChats AiTutorChat[]
+
+  @@index([ownerId, deckId])
+}
+
+model AiTutorChat {
+  id               String   @id @default(cuid())
+  ownerId          String
+  deckId           String?
+  importMaterialId String?
+  noteId           String?
+  title            String
+  summary          String
+  lessonStepsJson  String   @default("[]")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  owner          User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  deck           Deck?            @relation(fields: [deckId], references: [id], onDelete: SetNull)
+  importMaterial ImportMaterial?  @relation(fields: [importMaterialId], references: [id], onDelete: SetNull)
+  messages       AiTutorMessage[]
+
+  @@index([ownerId, createdAt])
+}
+
+model AiTutorMessage {
+  id                   String   @id @default(cuid())
+  chatId               String
+  role                 String   // user | assistant
+  content              String
+  attachmentName       String?
+  attachmentType       String?
+  suggestedActionsJson String   @default("[]")
+  createdAt            DateTime @default(now())
+
+  chat AiTutorChat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@index([chatId, createdAt])
+}
+
+model QuizSession {
+  id              String    @id @default(cuid())
+  userId          String
+  deckId          String
+  subdeckId       String?
+  mode            String    @default("LEARN") // LEARN | MEMORIZE | TEST
+  status          String    @default("IN_PROGRESS") // IN_PROGRESS | COMPLETED
+  currentIndex    Int       @default(0)
+  totalQuestions  Int       @default(6)
+  correctCount    Int       @default(0)
+  heartsRemaining Int       @default(5)
+  hintsUsed       Int       @default(0)
+  xpEarned        Int       @default(0)
+  gemsEarned      Int       @default(0)
+  startedAt       DateTime  @default(now())
+  completedAt     DateTime?
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deck     Deck          @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  subdeck  Subdeck?      @relation(fields: [subdeckId], references: [id], onDelete: SetNull)
+  attempts QuizAttempt[]
+
+  @@index([userId, status])
+}
+
+model QuizAttempt {
+  id             String   @id @default(cuid())
+  sessionId      String
+  cardId         String
+  selectedAnswer String
+  isCorrect      Boolean
+  usedHint       Boolean  @default(false)
+  usedReveal     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  session QuizSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  card    Card        @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, cardId])
+}
+
+model MonsterOwnership {
+  id          String   @id @default(cuid())
+  userId      String
+  monsterCode String
+  name        String
+  emoji       String
+  element     String   @default("Arcane")
+  rarity      String   @default("COMMON") // COMMON | RARE | LEGENDARY
+  level       Int      @default(1)
+  essenceXp   Int      @default(0)
+  isEquipped  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, monsterCode])
+}
+
+model ShopTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  itemCode  String
+  itemName  String
+  costGems  Int
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model StudyGroup {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @default("")
+  schoolName  String   @default("Nanyang Polytechnic")
+  inviteCode  String   @unique
+  emoji       String   @default("🎓")
+  createdAt   DateTime @default(now())
+
+  members  StudyGroupMember[]
+  messages StudyGroupMessage[]
+}
+
+model StudyGroupMember {
+  id       String   @id @default(cuid())
+  groupId  String
+  userId   String
+  role     String   @default("MEMBER") // OWNER | MEMBER
+  joinedAt DateTime @default(now())
+
+  group StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+}
+
+model StudyGroupMessage {
+  id           String   @id @default(cuid())
+  groupId      String
+  userId       String
+  content      String
+  sharedDeckId String?
+  createdAt    DateTime @default(now())
+
+  group StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, createdAt])
+}
+
+model LiveGameSession {
+  id            String   @id @default(cuid())
+  hostUserId    String
+  deckId        String
+  roomCode      String   @unique
+  opponentName  String   @default("Sofia (Classmate Bot)")
+  playerScore   Int      @default(0)
+  opponentScore Int      @default(0)
+  status        String   @default("COMPLETED")
+  winnerName    String   @default("You")
+  createdAt     DateTime @default(now())
+
+  hostUser User @relation(fields: [hostUserId], references: [id], onDelete: Cascade)
+  deck     Deck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+
+  @@index([hostUserId, createdAt])
+}

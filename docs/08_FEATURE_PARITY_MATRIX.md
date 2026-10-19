@@ -1,0 +1,24 @@
+# 08 — Feature Parity Matrix (`gizmo.ai` / `app.gizmo.ai` + Enterprise Invite-Only Spec)
+
+| Domain | Upstream Feature (`gizmo.ai` / `app.gizmo.ai`) | Local Implementation Route / Module | Parity Status |
+| :--- | :--- | :--- | :---: |
+| **Marketing & Landing** | Marketing landing page (`https://gizmo.ai`) with hero, university logos, feature cards & CTAs | `/` (Marketing view for unauthed users; optional `/welcome`) | 100% Full Parity |
+| **Auth & Onboarding** | `/sign-in`, `/sign-up`, `/forgot-password`, validation error states | `/sign-in`, `/sign-up` (Invite-Only gated), `/forgot-password` | 100% + Invite-Only Enhancement |
+| **Invite-Only Governance** | Reference `../Arcade` (`ACCOUNT_ADMISSION_MODE=invitation-only`, SHA-256 tokens, revocation, rotation, CLI bootstrap admin, `AuditLog`) | `src/lib/account-admission/*`, `scripts/bootstrap-admin.ts`, `/admin/invitations` | 100% Spec Compliant |
+| **AI Study Hub (`/chat`)** | "What shall we Study?" hub with Upload file (PDF, PPT...), Paste text, YouTube link, Record lecture, `See more options` (12 importers), Gizmo Live banner, Friends' & School decks | `/chat` (`src/app/(app)/chat/page.tsx`) | 100% Full Parity |
+| **Academic PDF Upload & AI Chat** | Upload `.pdf` (`attention-is-all-you-need.pdf`) -> SHA-256 hash -> `/chat/[chatId]` with PDF badge, AI summary, 3 Study Activity cards (`Memorize`, `Note`, `Step-by-step lesson`), `Save cards into` modal & follow-up chat | `/chat/[chatId]` + `POST /api/magic-import` + `POST /api/chats/[chatId]` | 100% Full Parity |
+| **AI Study Note Editor** | `/notes/[noteId]` with `< deck >` breadcrumb, `Study` & `🪄 Create cards` buttons, rich formatting toolbar (`B`, `I`, `U`, `S`, Math `Σ`, Table, `Record`, `Generate notes`), structured Markdown/LaTeX | `/notes/[noteId]` + `/api/notes/[noteId]` | 100% Full Parity |
+| **Deck Workspace — Study Path** | `/decks/[deckId]/path` with Subdeck list on left and Duolingo-style winding Study Path roadmap on right + mode popover (`Learn`, `Memorize`, `Test`) | `/decks/[deckId]` (`Path` tab) | 100% Full Parity |
+| **Deck Workspace — Materials & Cards** | `/decks/[deckId]/materials` & `/all-cards` with quick-action tiles (`Add import`, `Add notes`, `Add a lesson`, `Add a subdeck`, `Add cards`), `Notes`, `Imports (PDF)`, and `Cards (N)` with Cloze pills | `/decks/[deckId]` (`Materials` & `All Cards` views) | 100% Full Parity |
+| **Deck Workspace — Leaderboard** | `/decks/[deckId]/leaderboard` with deck rankings + `Gizmo Live: Play your friends at this deck` | `/decks/[deckId]` (`Leaderboard` tab) | 100% Full Parity |
+| **Card & Magic Import Editor** | `/add` & `/add?deckId=[id]` with Question/Answer editor, Cloze term highlighting, Multiple-Choice distractors & 12 Magic Import tiles | `/add` (`src/app/(app)/add/page.tsx`) | 100% Full Parity |
+| **Interactive Quiz Engine** | `/quiz/[userGameId]` with HUD (`Hints 💡`, `Hearts ❤️`, `XP ⚡`, progress bar), MCQ & Cloze `_` questions, `Hint` (crosses out wrong choice), `Reveal`, `Explain` AI modal with follow-up prompt pills, and completion rewards | `/quiz/[sessionId]` + `/api/quiz/[sessionId]/explain` | 100% Full Parity |
+| **Social & Progress** | `/progress` with weekly streak calendar, Belt Road card, Gizmonster collection card, Study League, Friends/School leaderboard & Activity Feed | `/progress` (`src/app/(app)/progress/page.tsx`) | 100% Full Parity |
+| **Belt Road Progression** | `/belt-road` with White -> Black Belt martial-arts progression & milestone reward chests | `/belt-road` (`src/app/(app)/belt-road/page.tsx`) | 100% Full Parity |
+| **Gizmonster Collection** | `/monster-collection` with monster slots, egg hatching & essence leveling | `/monster-collection` (`src/app/(app)/monster-collection/page.tsx`) | 100% Full Parity |
+| **In-App Gem Shop** | `/shop` with Dark Mode unlock, Hints, Super Hearts, Streak Freezes, Streak Repairs, Eggs, Essence & Monster Slots | `/shop` (`src/app/(app)/shop/page.tsx`) | 100% Full Parity |
+| **Public Decks Discovery** | `/decks/public` with 5B+ flashcard search, Sciences / Humanities / Languages category drill-down & one-click deck clone/study | `/decks/public` (`src/app/(app)/decks/public/page.tsx`) | 100% Full Parity |
+| **Study Groups** | `/conversations` & `/study-groups/create` with group creation, invite links, group chat & shared decks | `/conversations` & `/study-groups/create` | 100% Full Parity |
+| **Gizmo Live Multiplayer** | `/live` head-to-head real-time quiz battle with deck selector & live scoreboard | `/live` (`src/app/(app)/live/page.tsx`) | 100% Full Parity |
+| **Profile, Stats & Settings** | `/profile`, `/profile/stats`, `/profile/edit`, `/settings/*`, `/subscribe/benefits` | `/profile`, `/settings`, `/subscribe/benefits` | 100% Full Parity |
+| **Responsive Layouts** | Desktop Left Sidebar (`1440×900`) & Mobile Bottom Tab Bar (`390×844`) | Responsive shell in `src/components/AppShell.tsx` | 100% Full Parity |

@@ -1,0 +1,28 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gizmo
+      POSTGRES_PASSWORD: gizmo_secret_password
+      POSTGRES_DB: gizmo
+    ports:
+      - "5432:5432"
+    volumes:
+      - gizmo_pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "postgresql://gizmo:gizmo_secret_password@postgres:5432/gizmo?schema=public"
+      NEXTAUTH_URL: "http://localhost:3000"
+      NEXTAUTH_SECRET: "production-gizmo-nextauth-secret-change-me"
+      ACCOUNT_ADMISSION_MODE: "invitation-only"
+
+volumes:
+  gizmo_pgdata:
